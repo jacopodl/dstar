@@ -1,0 +1,7 @@
+[submodule "lib/spark"]
+	path = lib/spark
+	url = https://github.com/jacopodl/spark
+	branch = dev3
+[submodule "lib/argsx"]
+	path = lib/argsx
+	url = https://github.com/jacopodl/argsx
