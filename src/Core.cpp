@@ -16,8 +16,16 @@
 
 #include <iostream>
 #include <cstring>
+#include <thread>
 
 #include "Core.h"
+
+void Core::executeActions() {
+    while (!this->stop) {
+        for (auto action:this->actions)
+            action->action(this);
+    }
+}
 
 void Core::recvDhcp() {
     EthHeader *eth;
@@ -69,6 +77,9 @@ void Core::recvDhcp() {
             continue;
 
         pktInfo.toServer = ntohs(udp->srcport) == 68 && ntohs(udp->dstport) == 67;
+
+        for (auto action:this->actions)
+            action->recvDhcpMsg(this, &pktInfo, dhcp);
     }
 }
 
@@ -87,6 +98,18 @@ int Core::sendDhcpMsg(DhcpPacket *message, unsigned short len, PacketInfo *pktIn
         src = 68;
         dst = 67;
     }
+
+    eth = eth_inject_header(buf, &this->sock->iaddr, &pktInfo->phisAddr, ETHTYPE_IP);
+    ip = ip_inject_header((unsigned char *) eth->data,
+                          &pktInfo->ipSrc,
+                          &pktInfo->ipDst, IPDEFIHL,
+                          ip_mkid(),
+                          (unsigned short) UDPHDRSIZE + len,
+                          IPDEFTTL,
+                          0x11);
+    udp = udp_inject_header((unsigned char *) ip->data, src, dst, len);
+    memcpy(udp->data, message, len);
+    return spark_write(this->sock, buf, ETHHDRSIZE + IPHDRSIZE + UDPHDRSIZE + len);
 }
 
 void Core::openSocket(const std::string &interface) {
@@ -99,11 +122,15 @@ void Core::openSocket(const std::string &interface) {
 
     this->buf = new unsigned char[SOCK_BUFSIZE];
 
+    this->thActions = std::thread(&Core::executeActions, this);
+
     this->recvDhcp();
+
+    this->thActions.join();
 
     delete[] this->buf;
 }
 
-void Core::registerCallback() {
-
+void Core::registerAction(DhcpAction *action) {
+    this->actions.push_front(action);
 }

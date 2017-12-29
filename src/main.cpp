@@ -18,7 +18,7 @@
 #include <argsx.h>
 
 #include <dstar.h>
-#include "Core.h"
+#include <actions/Flood.h>
 
 using namespace std;
 
@@ -71,6 +71,7 @@ int main(int argc, char **argv) {
     printWelcome();
 
     if (options.mode & ATKMODE_FLOOD) {
+        core.registerAction(new Flood());
 
     } else if (options.mode & ATKMODE_RELEASE) {
 

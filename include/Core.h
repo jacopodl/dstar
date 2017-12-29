@@ -17,27 +17,37 @@
 #ifndef DSTAR_CORE_H
 #define DSTAR_CORE_H
 
+#include <thread>
+#include <list>
 #include <string>
 #include <spark.h>
 
 #include <PacketInfo.h>
+#include <DhcpAction.h>
 
 #define SOCK_BUFSIZE    2048
 
+class DhcpAction;
+
 class Core {
 private:
+    std::thread thActions;
+    std::list<DhcpAction *> actions;
     SpkSock *sock;
     unsigned char *buf;
-    bool stop = false;
+
+    void executeActions();
 
     void recvDhcp();
 
 public:
+    bool stop = false;
+
     void openSocket(const std::string &interface);
 
     int sendDhcpMsg(DhcpPacket *message, unsigned short len, PacketInfo *pktInfo);
 
-    void registerCallback();
+    void registerAction(DhcpAction *action);
 };
 
 

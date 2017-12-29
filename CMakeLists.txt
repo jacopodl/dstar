@@ -27,7 +27,7 @@ link_directories("${source_dir}/bin/")
 include_directories(include)
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
 
-add_executable(dstar src/main.cpp src/Core.cpp)
+add_executable(dstar src/main.cpp src/Core.cpp src/actions/Flood.cpp)
 add_dependencies(dstar ${DEP_ARGSX})
 add_dependencies(dstar ${DEP_SPARK})
 target_link_libraries(dstar pthread)
