@@ -18,17 +18,19 @@
 #include <argsx.h>
 
 #include <dstar.h>
+#include "Core.h"
 
 using namespace std;
 
 int main(int argc, char **argv) {
-    int opt;
     Options options{};
     ax_lopt lopt[] = {{(char *) "flood",      ARGSX_NOARG,   1},
                       {(char *) "release",    ARGSX_REQ_ARG, 2},
                       {(char *) "starvation", ARGSX_NOARG,   3},
                       {(char *) "help",       ARGSX_NOARG,   'h'},
                       {(char *) "version",    ARGSX_NOARG,   'v'}};
+    Core core{};
+    int opt;
 
     if (argc < 2) {
         usage();
@@ -61,6 +63,7 @@ int main(int argc, char **argv) {
             case ARGSX_FEW_ARGS:
                 return -1;
             default:
+                options.iface = std::string(ax_arg);
                 break;
         }
     }
@@ -74,6 +77,9 @@ int main(int argc, char **argv) {
     } else if (options.mode & ATKMODE_STARVATION) {
 
     }
+
+    core.openSocket(options.iface);
+
     return 0;
 }
 
