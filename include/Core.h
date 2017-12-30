@@ -18,12 +18,14 @@
 #define DSTAR_CORE_H
 
 #include <thread>
+#include <mutex>
 #include <list>
 #include <string>
 #include <spark.h>
 
 #include <PacketInfo.h>
 #include <DhcpAction.h>
+#include <DhcpSlot.h>
 
 #define SOCK_BUFSIZE    2048
 
@@ -31,8 +33,12 @@ class DhcpAction;
 
 class Core {
 private:
-    std::thread thActions;
     std::list<DhcpAction *> actions;
+    std::list<DhcpSlot *> freeSlots;
+    std::list<DhcpSlot *> assignedSlots;
+    std::mutex fsMutex;
+    std::mutex asMutex;
+    std::thread thActions;
     SpkSock *sock;
     unsigned char *buf;
 
@@ -48,6 +54,8 @@ public:
     int sendDhcpMsg(DhcpPacket *message, unsigned short len, PacketInfo *pktInfo);
 
     void registerAction(DhcpAction *action);
+
+    void addToFreeSlot(DhcpSlot *slot);
 };
 
 

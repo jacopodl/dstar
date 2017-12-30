@@ -19,6 +19,7 @@
 
 #include <dstar.h>
 #include <actions/Flood.h>
+#include <actions/Starvation.h>
 
 using namespace std;
 
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
     } else if (options.mode & ATKMODE_RELEASE) {
 
     } else if (options.mode & ATKMODE_STARVATION) {
-
+        core.registerAction(new Starvation());
     }
 
     core.openSocket(options.iface);

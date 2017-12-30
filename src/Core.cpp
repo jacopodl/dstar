@@ -21,10 +21,9 @@
 #include "Core.h"
 
 void Core::executeActions() {
-    while (!this->stop) {
+    while (!this->stop)
         for (auto action:this->actions)
             action->action(this);
-    }
 }
 
 void Core::recvDhcp() {
@@ -133,4 +132,10 @@ void Core::openSocket(const std::string &interface) {
 
 void Core::registerAction(DhcpAction *action) {
     this->actions.push_front(action);
+}
+
+void Core::addToFreeSlot(DhcpSlot *slot) {
+    this->fsMutex.lock();
+    this->freeSlots.push_front(slot);
+    this->fsMutex.unlock();
 }
