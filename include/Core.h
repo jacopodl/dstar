@@ -48,6 +48,8 @@ private:
 
 public:
     bool stop = false;
+    bool releaseOnExit = true;
+    bool verbose = true;
 
     void openSocket(const std::string &interface);
 
@@ -56,6 +58,10 @@ public:
     void registerAction(DhcpAction *action);
 
     void addToFreeSlot(DhcpSlot *slot);
+
+    void releaseSlot(DhcpSlot *slot);
+
+    void releaseSlots();
 };
 
 

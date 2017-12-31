@@ -17,6 +17,7 @@
 #include <iostream>
 #include <cstring>
 #include <thread>
+#include <zconf.h>
 
 #include "Core.h"
 
@@ -127,6 +128,12 @@ void Core::openSocket(const std::string &interface) {
 
     this->thActions.join();
 
+    if (this->releaseOnExit) {
+        std::cout << "Releasing addresses...\n";
+        this->releaseSlots();
+        std::cout << "All done!\n";
+    }
+
     delete[] this->buf;
 }
 
@@ -138,4 +145,44 @@ void Core::addToFreeSlot(DhcpSlot *slot) {
     this->fsMutex.lock();
     this->freeSlots.push_front(slot);
     this->fsMutex.unlock();
+}
+
+void Core::releaseSlot(DhcpSlot *slot) {
+    DhcpPacket packet{};
+    PacketInfo pktInfo{};
+    int err;
+
+    pktInfo.phisAddr = slot->serverMac;
+    pktInfo.ipSrc = slot->clientIp;
+    pktInfo.ipDst = slot->serverIp;
+    pktInfo.toServer = true;
+
+    dhcp_inject_release((unsigned char *) &packet, &slot->clientMac, &slot->clientIp, &slot->serverIp, 0);
+
+    if ((err = this->sendDhcpMsg(&packet, DHCPPKTSIZE, &pktInfo)) < 0)
+        std::cerr << "Core(Release): " << spark_strerror(err) << std::endl;
+}
+
+void Core::releaseSlots() {
+    this->fsMutex.lock();
+    this->asMutex.lock();
+    auto fsCursor = this->freeSlots.begin();
+    auto asCursor = this->assignedSlots.begin();
+
+    for (fsCursor; fsCursor != this->freeSlots.end(); fsCursor++) {
+        this->releaseSlot(*fsCursor);
+        delete (*fsCursor);
+        usleep(5000);
+    }
+
+    for (asCursor; asCursor != this->assignedSlots.end(); asCursor++) {
+        this->releaseSlot(*asCursor);
+        delete (*asCursor);
+        usleep(5000);
+    }
+
+    this->freeSlots.clear();
+    this->assignedSlots.clear();
+    this->fsMutex.unlock();
+    this->asMutex.unlock();
 }

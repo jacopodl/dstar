@@ -26,8 +26,13 @@ void Starvation::action(Core *core) {
     while (this->lastXid != 0) {
         timespec_get(&maxWaitCond, TIMER_ABSTIME);
         maxWaitCond.tv_sec += 10;
-        if (pthread_cond_timedwait(&this->cond, &this->mutex, &maxWaitCond) == ETIMEDOUT)
+        if (pthread_cond_timedwait(&this->cond, &this->mutex, &maxWaitCond) == ETIMEDOUT) {
             this->lastXid = 0;
+            if (core->stop) {
+                pthread_mutex_unlock(&this->mutex);
+                return;
+            }
+        }
     }
 
     eth_rndaddr(&req);
@@ -39,6 +44,9 @@ void Starvation::action(Core *core) {
     if ((err = core->sendDhcpMsg(&dhcpPacket, DHCPPKTSIZE, &pktInfo)) < 0) {
         std::cerr << "Starvation action: " << spark_strerror(err) << std::endl;
         core->stop = true;
+    } else {
+        if (core->verbose)
+            std::cout << "\n[<---] DHCP DISCOVER" << std::endl;
     }
     lastXid = dhcpPacket.xid;
     pthread_mutex_unlock(&this->mutex);
@@ -50,6 +58,8 @@ void Starvation::recvDhcpMsg(Core *core, PacketInfo *pktInfo, DhcpPacket *dhcp) 
     netaddr_mac(chaddr);
     netaddr_ip(ipReq);
     netaddr_ip(serverIp);
+    char cIp[IPSTRLEN];
+    char cMac[ETHSTRLEN];
     int err;
 
     pthread_mutex_lock(&this->mutex);
@@ -62,6 +72,8 @@ void Starvation::recvDhcpMsg(Core *core, PacketInfo *pktInfo, DhcpPacket *dhcp) 
     serverIp.ip = dhcp->siaddr;
 
     if (dhcp_type_equals(dhcp, DHCP_OFFER)) {
+        if (core->verbose)
+            std::cout << "[--->] DHCP OFFER" << std::endl;
         dhcp_inject_request((unsigned char *) &packet, &chaddr, &ipReq, this->lastXid, &serverIp, DHCP_FLAGS_BROADCAST);
         pktInfo->ipSrc.ip = ipReq.ip;
         pktInfo->ipDst.ip = serverIp.ip;
@@ -69,6 +81,9 @@ void Starvation::recvDhcpMsg(Core *core, PacketInfo *pktInfo, DhcpPacket *dhcp) 
         if ((err = core->sendDhcpMsg(&packet, DHCPPKTSIZE, pktInfo)) < 0) {
             std::cerr << "Starvation action(request): " << spark_strerror(err) << std::endl;
             core->stop = true;
+        } else {
+            if (core->verbose)
+                std::cout << "[<---] DHCP REQUEST" << std::endl;
         }
 
     } else if (dhcp_type_equals(dhcp, DHCP_ACK)) {
@@ -79,17 +94,17 @@ void Starvation::recvDhcpMsg(Core *core, PacketInfo *pktInfo, DhcpPacket *dhcp) 
         slot->serverMac = pktInfo->phisAddr;
         gettimeofday(&slot->timeStamp, nullptr);
         slot->lease = ntohl(dhcp_get_option_uint(dhcp, DHCP_ADDR_LEASE_TIME));
-
-        printf("Ip: %s mac: %s\n", ip_getstr(&slot->clientIp, true), eth_getstr(&slot->clientMac, true));
-        printf("Ip: %s mac: %s\n", ip_getstr(&slot->serverIp, true), eth_getstr(&slot->serverMac, true));
-        printf("lease: %d\n", slot->lease);
-
+        if (core->verbose) {
+            std::cout << "[--->V] DHCP ACK\n\tIp:" << ip_getstr_r(&slot->clientIp, cIp)
+                      << " - MAC:" << eth_getstr_r(&slot->clientMac, cMac)
+                      << " lease(s):" << slot->lease << std::endl;
+        }
         core->addToFreeSlot(slot);
-
         this->lastXid = 0;
         pthread_cond_signal(&this->cond);
     } else if (dhcp_type_equals(dhcp, DHCP_NAK)) {
-
+        if (core->verbose)
+            std::cout << "[--->X] DHCP NACK" << std::endl;
     }
     pthread_mutex_unlock(&this->mutex);
 }

@@ -38,4 +38,6 @@ void printWelcome();
 
 void usage();
 
+void sigHandler(int signum);
+
 #endif //DSTAR_H

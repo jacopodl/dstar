@@ -20,8 +20,11 @@
 #include <dstar.h>
 #include <actions/Flood.h>
 #include <actions/Starvation.h>
+#include <csignal>
 
 using namespace std;
+
+Core core{};
 
 int main(int argc, char **argv) {
     Options options{};
@@ -30,7 +33,6 @@ int main(int argc, char **argv) {
                       {(char *) "starvation", ARGSX_NOARG,   3},
                       {(char *) "help",       ARGSX_NOARG,   'h'},
                       {(char *) "version",    ARGSX_NOARG,   'v'}};
-    Core core{};
     int opt;
 
     if (argc < 2) {
@@ -80,6 +82,7 @@ int main(int argc, char **argv) {
         core.registerAction(new Starvation());
     }
 
+    signal(SIGINT, sigHandler);
     core.openSocket(options.iface);
 
     return 0;
@@ -106,4 +109,9 @@ void printWelcome() {
 void usage() {
     printf("\n%s - ", NAME);
     printf("\nUsage: %s <iface> --<flood|release|starvation>\n", NAME);
+}
+
+void sigHandler(int signum) {
+    cout << "Stopping..." << endl;
+    core.stop = true;
 }
