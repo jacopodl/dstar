@@ -6,8 +6,10 @@ struct DhcpSlot {
     netaddr_mac clientMac;
     netaddr_ip serverIp;
     netaddr_mac serverMac;
-    int lease;
     timeval timeStamp;
+    unsigned int lease;
+    unsigned int xid = 0;
+    bool assigned = false;
 };
 
 #endif //DSTAR_DHCPSLOT_H
