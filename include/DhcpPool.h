@@ -14,21 +14,32 @@
 	* along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef DSTAR_DHCPACTION_H
-#define DSTAR_DHCPACTION_H
+#ifndef DSTAR_DHCPPOOL_H
+#define DSTAR_DHCPPOOL_H
 
+#include <list>
+#include <mutex>
 #include <spark.h>
 
-#include <DhcpSocket.h>
-#include <DhcpPool.h>
+#include <DhcpSlot.h>
 
-class DhcpAction {
+class DhcpPool {
+private:
+    std::list<DhcpSlot *> slots;
+    std::mutex mutex;
 public:
-    virtual ~DhcpAction() = default;
+    bool empty();
 
-    virtual void action(DhcpSocket *socket) = 0;
+    DhcpSlot *popAndErase();
 
-    virtual void recvDhcpMsg(DhcpSocket *socket, DhcpPool *pool, PacketInfo *pktInfo, DhcpPacket *dhcp) {};
+    DhcpSlot *getFreeSlot();
+
+    DhcpSlot *getSlotByXid(unsigned int xid);
+
+    void addSlot(DhcpSlot *slot);
+
+    void releaseSlot(netaddr_ip *ip);
 };
 
-#endif //DSTAR_DHCPACTION_H
+
+#endif //DSTAR_DHCPPOOL_H

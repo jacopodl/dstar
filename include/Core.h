@@ -1,6 +1,6 @@
 /*
-	* dstar.
-	* Copyright (C) 2018 Jacopo De Luca
+	* dstar
+	* Copyright (C) 2017 - 2018 Jacopo De Luca
 	*
 	* This program is free software: you can redistribute it and/or modify
 	* it under the terms of the GNU General Public License as published by
@@ -18,50 +18,41 @@
 #define DSTAR_CORE_H
 
 #include <thread>
-#include <mutex>
 #include <list>
 #include <string>
 #include <spark.h>
 
 #include <PacketInfo.h>
 #include <DhcpAction.h>
+#include <DhcpSocket.h>
+#include <DhcpPool.h>
 #include <DhcpSlot.h>
-
-#define SOCK_BUFSIZE    2048
-
-class DhcpAction;
 
 class Core {
 private:
     std::list<DhcpAction *> actions;
-    std::list<DhcpSlot *> freeSlots;
-    std::list<DhcpSlot *> assignedSlots;
-    std::mutex fsMutex;
-    std::mutex asMutex;
     std::thread thActions;
-    SpkSock *sock;
-    unsigned char *buf;
 
     void executeActions();
 
     void recvDhcp();
 
+    void dhcpServer(DhcpPacket *message);
+
 public:
+    DhcpSocket socket;
+    DhcpPool pool;
+
     bool stop = false;
     bool releaseOnExit = true;
     bool verbose = true;
+    bool enableServer = true;
 
     void openSocket(const std::string &interface);
 
-    int sendDhcpMsg(DhcpPacket *message, unsigned short len, PacketInfo *pktInfo);
-
     void registerAction(DhcpAction *action);
 
-    void addToFreeSlot(DhcpSlot *slot);
-
-    void releaseSlot(DhcpSlot *slot);
-
-    void releaseSlots();
+    void releasePool();
 };
 
 

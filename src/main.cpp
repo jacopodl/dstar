@@ -1,6 +1,6 @@
 /*
-	* dstar.
-	* Copyright (C) 2018 Jacopo De Luca
+	* dstar
+	* Copyright (C) 2017 - 2018 Jacopo De Luca
 	*
 	* This program is free software: you can redistribute it and/or modify
 	* it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 #include <actions/Flood.h>
 #include <actions/Starvation.h>
 #include <csignal>
+
+#include <Core.h>
 
 using namespace std;
 
@@ -83,6 +85,7 @@ int main(int argc, char **argv) {
     }
 
     signal(SIGINT, sigHandler);
+
     core.openSocket(options.iface);
 
     return 0;

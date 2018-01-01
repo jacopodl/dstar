@@ -14,21 +14,39 @@
 	* along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef DSTAR_DHCPACTION_H
-#define DSTAR_DHCPACTION_H
+#ifndef DSTAR_DHCPSOCKET_H
+#define DSTAR_DHCPSOCKET_H
 
+#include <string>
 #include <spark.h>
 
-#include <DhcpSocket.h>
-#include <DhcpPool.h>
+#include <PacketInfo.h>
+#include <DhcpSlot.h>
 
-class DhcpAction {
+#define SOCK_BUFSIZE    2048
+
+class DhcpSocket {
+private:
+    SpkSock *sock = nullptr;
+    unsigned char *buf;
 public:
-    virtual ~DhcpAction() = default;
+    struct {
+        netaddr_ip ipAddr;
+        netaddr_ip netMask;
+    } netinfo;
 
-    virtual void action(DhcpSocket *socket) = 0;
+    DhcpSocket();
 
-    virtual void recvDhcpMsg(DhcpSocket *socket, DhcpPool *pool, PacketInfo *pktInfo, DhcpPacket *dhcp) {};
+    ~DhcpSocket();
+
+    int recvDhcp(unsigned char *buf, PacketInfo *pktInfo);
+
+    int sendDhcpMsg(DhcpPacket *message, unsigned short len, PacketInfo *pktInfo);
+
+    void sendDhcpRelease(DhcpSlot *slot);
+
+    void openSocket(const std::string &interface);
 };
 
-#endif //DSTAR_DHCPACTION_H
+
+#endif //DSTAR_DHCPSOCKET_H

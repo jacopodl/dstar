@@ -1,6 +1,6 @@
 /*
-	* dstar.
-	* Copyright (C) 2018 Jacopo De Luca
+	* dstar
+	* Copyright (C) 2017 - 2018 Jacopo De Luca
 	*
 	* This program is free software: you can redistribute it and/or modify
 	* it under the terms of the GNU General Public License as published by
