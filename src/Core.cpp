@@ -17,6 +17,7 @@
 #include <iostream>
 #include <cstring>
 #include <zconf.h>
+#include <DhcpSocket.h>
 
 #include "Core.h"
 
@@ -36,6 +37,9 @@ void Core::recvDhcp() {
 
         for (auto action:this->actions)
             action->recvDhcpMsg(&this->socket, &this->pool, &pktInfo, &packet);
+
+        if (this->enableServer)
+            this->dhcpServer(&packet);
     }
 }
 
@@ -69,3 +73,93 @@ void Core::releasePool() {
     }
 }
 
+void Core::dhcpServer(DhcpPacket *message) {
+    DhcpPacket response{};
+    PacketInfo pktInfo{};
+    DhcpSlot *slot = nullptr;
+    netaddr_ip(clientIp);
+    int tmp = 0;
+
+    if (dhcp_type_equals(message, DHCP_DISCOVER)) {
+        if ((slot = this->pool.getFreeSlot()) == nullptr)
+            return;
+
+        slot->xid = message->xid;
+
+        // OFFER
+        dhcp_inject_raw((unsigned char *) &response,
+                        DHCP_OP_BOOT_REPLY,
+                        0,
+                        message->xid,
+                        DHCP_FLAGS_BROADCAST,
+                        0,
+                        nullptr,
+                        &slot->clientIp,
+                        &this->socket.netinfo.ipAddr,
+                        nullptr,
+                        nullptr,
+                        nullptr);
+        memcpy(response.chaddr, message->chaddr, ETHHWASIZE);
+        response.options[tmp++] = DHCP_MESSAGE_TYPE;
+        response.options[tmp++] = 0x01;
+        response.options[tmp++] = DHCP_OFFER;
+        response.options[tmp] = 0xFF;
+
+        dhcp_append_option(&response, DHCP_SERVER_IDENTIFIER, IPADDRSIZE,
+                           (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+        dhcp_append_option(&response, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+        dhcp_append_option(&response, DHCP_REQ_SUBMASK, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.netMask.ip);
+        tmp = htonl(slot->lease);
+        std::cout << dhcp_append_option(&response, DHCP_ADDR_LEASE_TIME, 4, (unsigned char *) &tmp);
+        dhcp_append_option(&response, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+
+        // INFO
+        pktInfo.ipSrc = this->socket.netinfo.ipAddr;
+        pktInfo.ipDst.ip = 0xFFFFFFFF;
+        eth_bcast(&pktInfo.phisAddr);
+        pktInfo.toServer = false;
+        if ((tmp = this->socket.sendDhcpMsg(&response, DHCPPKTSIZE, &pktInfo)) < 0)
+            std::cerr << "DHCP server err: " << spark_strerror(tmp) << std::endl;
+    } else if (dhcp_type_equals(message, DHCP_REQUEST)) {
+        if ((slot = this->pool.getSlotByXid(message->xid)) == nullptr)
+            return;
+
+        slot->assigned = true;
+        dhcp_inject_raw((unsigned char *) &response,
+                        DHCP_OP_BOOT_REPLY,
+                        0,
+                        message->xid,
+                        DHCP_FLAGS_BROADCAST,
+                        0,
+                        nullptr,
+                        &slot->clientIp,
+                        &this->socket.netinfo.ipAddr,
+                        nullptr,
+                        nullptr,
+                        nullptr);
+        memcpy(response.chaddr, message->chaddr, ETHHWASIZE);
+        response.options[tmp++] = DHCP_MESSAGE_TYPE;
+        response.options[tmp++] = 0x01;
+        response.options[tmp++] = DHCP_ACK;
+        response.options[tmp] = 0xFF;
+
+        dhcp_append_option(&response, DHCP_SERVER_IDENTIFIER, IPADDRSIZE,
+                           (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+        dhcp_append_option(&response, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+        dhcp_append_option(&response, DHCP_REQ_SUBMASK, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.netMask.ip);
+        tmp = htonl(slot->lease);
+        std::cout << dhcp_append_option(&response, DHCP_ADDR_LEASE_TIME, 4, (unsigned char *) &tmp);
+        dhcp_append_option(&response, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+
+        // INFO
+        pktInfo.ipSrc = this->socket.netinfo.ipAddr;
+        pktInfo.ipDst.ip = 0xFFFFFFFF;
+        eth_bcast(&pktInfo.phisAddr);
+        pktInfo.toServer = false;
+        if ((tmp = this->socket.sendDhcpMsg(&response, DHCPPKTSIZE, &pktInfo)) < 0)
+            std::cerr << "DHCP server err: " << spark_strerror(tmp) << std::endl;
+    } else if (dhcp_type_equals(message, DHCP_RELEASE)) {
+        clientIp.ip = message->ciaddr;
+        this->pool.releaseSlot(&clientIp);
+    }
+}
