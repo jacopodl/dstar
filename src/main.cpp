@@ -33,8 +33,12 @@ int main(int argc, char **argv) {
     ax_lopt lopt[] = {{(char *) "flood",      ARGSX_NOARG,   1},
                       {(char *) "release",    ARGSX_REQ_ARG, 2},
                       {(char *) "starvation", ARGSX_NOARG,   3},
+                      {(char *) "no-release", ARGSX_NOARG,   4},
                       {(char *) "help",       ARGSX_NOARG,   'h'},
-                      {(char *) "version",    ARGSX_NOARG,   'v'}};
+                      {(char *) "version",    ARGSX_NOARG,   'v'},
+                      {(char *) "server",     ARGSX_NOARG,   's'},
+                      {(char *) "lease",      ARGSX_NOARG,   'l'},
+                      {(char *) "dns",        ARGSX_REQ_ARG, 'd'}};
     int opt;
 
     if (argc < 2) {
@@ -42,7 +46,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    while ((opt = argsx(argc, argv, (char *) "hv", lopt, sizeof(lopt), '-')) != -1) {
+    while ((opt = argsx(argc, argv, (char *) "hvsld!", lopt, sizeof(lopt), '-')) != -1) {
         switch (opt) {
             case 1:
                 options.mode |= ATKMODE_FLOOD;
@@ -52,6 +56,9 @@ int main(int argc, char **argv) {
                 break;
             case 3:
                 options.mode |= ATKMODE_STARVATION;
+                break;
+            case 4:
+                core.releaseOnExit = false;
                 break;
             case 'h':
                 usage();
@@ -63,6 +70,13 @@ int main(int argc, char **argv) {
                        __DATE__, __TIME__);
 #endif
                 return 0;
+            case 's':
+                core.enableServer = true;
+                break;
+            case 'l':
+                break;
+            case 'd':
+                break;
             case ARGSX_BAD_OPT:
                 return -1;
             case ARGSX_FEW_ARGS:

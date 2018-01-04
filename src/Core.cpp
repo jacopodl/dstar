@@ -18,8 +18,7 @@
 #include <cstring>
 #include <zconf.h>
 #include <DhcpSocket.h>
-
-#include "Core.h"
+#include <Core.h>
 
 void Core::executeActions() {
     while (!this->stop)
@@ -73,6 +72,36 @@ void Core::releasePool() {
     }
 }
 
+void Core::addDhcpDefaultOpt(DhcpPacket *message, DhcpSlot *slot, unsigned char type) {
+    int op = 0;
+
+    message->options[op++] = DHCP_MESSAGE_TYPE;
+    message->options[op++] = 0x01;
+    message->options[op++] = type;
+    message->options[op] = 0xFF;
+
+    dhcp_append_option(message, DHCP_SERVER_IDENTIFIER, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+    dhcp_append_option(message, DHCP_REQ_SUBMASK, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.netMask.ip);
+
+    // ROUTER
+    if (ip_isempty(&this->serverOptions.gateway))
+        dhcp_append_option(message, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+    else
+        dhcp_append_option(message, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->serverOptions.gateway);
+
+    // PRIMARY DNS
+    if (ip_isempty(&this->serverOptions.primaryDns))
+        dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+    else
+        dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->serverOptions.primaryDns);
+
+    // LEASE TIME
+    op = htonl(slot->lease);
+    if (this->serverOptions.lease != 0)
+        op = htonl(this->serverOptions.lease);
+    dhcp_append_option(message, DHCP_ADDR_LEASE_TIME, 4, (unsigned char *) &op);
+}
+
 void Core::dhcpServer(DhcpPacket *message) {
     DhcpPacket response{};
     PacketInfo pktInfo{};
@@ -100,19 +129,7 @@ void Core::dhcpServer(DhcpPacket *message) {
                         nullptr,
                         nullptr);
         memcpy(response.chaddr, message->chaddr, ETHHWASIZE);
-        response.options[tmp++] = DHCP_MESSAGE_TYPE;
-        response.options[tmp++] = 0x01;
-        response.options[tmp++] = DHCP_OFFER;
-        response.options[tmp] = 0xFF;
-
-        dhcp_append_option(&response, DHCP_SERVER_IDENTIFIER, IPADDRSIZE,
-                           (unsigned char *) &this->socket.netinfo.ipAddr.ip);
-        dhcp_append_option(&response, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
-        dhcp_append_option(&response, DHCP_REQ_SUBMASK, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.netMask.ip);
-        tmp = htonl(slot->lease);
-        std::cout << dhcp_append_option(&response, DHCP_ADDR_LEASE_TIME, 4, (unsigned char *) &tmp);
-        dhcp_append_option(&response, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
-
+        this->addDhcpDefaultOpt(&response, slot, DHCP_OFFER);
         // INFO
         pktInfo.ipSrc = this->socket.netinfo.ipAddr;
         pktInfo.ipDst.ip = 0xFFFFFFFF;
@@ -125,6 +142,8 @@ void Core::dhcpServer(DhcpPacket *message) {
             return;
 
         slot->assigned = true;
+
+        // ACK
         dhcp_inject_raw((unsigned char *) &response,
                         DHCP_OP_BOOT_REPLY,
                         0,
@@ -138,19 +157,7 @@ void Core::dhcpServer(DhcpPacket *message) {
                         nullptr,
                         nullptr);
         memcpy(response.chaddr, message->chaddr, ETHHWASIZE);
-        response.options[tmp++] = DHCP_MESSAGE_TYPE;
-        response.options[tmp++] = 0x01;
-        response.options[tmp++] = DHCP_ACK;
-        response.options[tmp] = 0xFF;
-
-        dhcp_append_option(&response, DHCP_SERVER_IDENTIFIER, IPADDRSIZE,
-                           (unsigned char *) &this->socket.netinfo.ipAddr.ip);
-        dhcp_append_option(&response, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
-        dhcp_append_option(&response, DHCP_REQ_SUBMASK, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.netMask.ip);
-        tmp = htonl(slot->lease);
-        std::cout << dhcp_append_option(&response, DHCP_ADDR_LEASE_TIME, 4, (unsigned char *) &tmp);
-        dhcp_append_option(&response, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
-
+        this->addDhcpDefaultOpt(&response, slot, DHCP_ACK);
         // INFO
         pktInfo.ipSrc = this->socket.netinfo.ipAddr;
         pktInfo.ipDst.ip = 0xFFFFFFFF;

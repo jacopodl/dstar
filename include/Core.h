@@ -39,14 +39,21 @@ private:
 
     void dhcpServer(DhcpPacket *message);
 
+    void addDhcpDefaultOpt(DhcpPacket *message, DhcpSlot *slot, unsigned char type);
+
 public:
     DhcpSocket socket;
     DhcpPool pool;
 
     bool stop = false;
     bool releaseOnExit = true;
-    bool verbose = true;
-    bool enableServer = true;
+    bool enableServer = false;
+
+    struct {
+        netaddr_ip gateway{};
+        netaddr_ip primaryDns{};
+        unsigned short lease = 0;
+    } serverOptions;
 
     void openSocket(const std::string &interface);
 
