@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
                       {(char *) "help",       ARGSX_NOARG,   'h'},
                       {(char *) "version",    ARGSX_NOARG,   'v'},
                       {(char *) "server",     ARGSX_NOARG,   's'},
+                      {(char *) "gateway",    ARGSX_REQ_ARG, 'g'},
                       {(char *) "lease",      ARGSX_NOARG,   'l'},
                       {(char *) "dns",        ARGSX_REQ_ARG, 'd'}};
     int opt;
@@ -46,7 +47,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    while ((opt = argsx(argc, argv, (char *) "hvsld!", lopt, sizeof(lopt), '-')) != -1) {
+    while ((opt = argsx(argc, argv, (char *) "hvsg!ld!", lopt, sizeof(lopt), '-')) != -1) {
         switch (opt) {
             case 1:
                 options.mode |= ATKMODE_FLOOD;
@@ -73,9 +74,20 @@ int main(int argc, char **argv) {
             case 's':
                 core.enableServer = true;
                 break;
+            case 'g':
+                if (!ip_parse_addr(ax_arg, &core.serverOptions.gateway)) {
+                    cerr << "Invalid gateway address!\n";
+                    return -1;
+                }
+                break;
             case 'l':
+                core.serverOptions.lease = (unsigned short) std::strtoul(ax_arg, nullptr, 10);
                 break;
             case 'd':
+                if (!ip_parse_addr(ax_arg, &core.serverOptions.primaryDns)) {
+                    cerr << "Invalid DNS address!\n";
+                    return -1;
+                }
                 break;
             case ARGSX_BAD_OPT:
                 return -1;
@@ -87,20 +99,20 @@ int main(int argc, char **argv) {
         }
     }
 
-    printWelcome();
+    if (options.mode != 0) {
+        printWelcome();
+        if (options.mode & ATKMODE_FLOOD) {
+            core.registerAction(new Flood());
+        } else if (options.mode & ATKMODE_RELEASE) {
 
-    if (options.mode & ATKMODE_FLOOD) {
-        core.registerAction(new Flood());
-
-    } else if (options.mode & ATKMODE_RELEASE) {
-
-    } else if (options.mode & ATKMODE_STARVATION) {
-        core.registerAction(new Starvation());
-    }
-
-    signal(SIGINT, sigHandler);
-
-    core.openSocket(options.iface);
+        } else if (options.mode & ATKMODE_STARVATION) {
+            core.registerAction(new Starvation());
+        }
+        signal(SIGINT, sigHandler);
+        core.openSocket(options.iface);
+    } else
+        printf("Nothing to do here! Zzzz\n"
+                       "Psss, you can try with %s --help ;)\n", NAME);
 
     return 0;
 }
@@ -120,12 +132,25 @@ void printWelcome() {
 :: :  :   :: : :       :      :   : :   :   : :
                                                  )");
     cout << welcome;
-    printf("v%d.%d.%d (%s)\n\n", 1, 0, 0, "alpha");
+    printf("v%d.%d.%d (%s)\n\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TYPE);
 }
 
 void usage() {
-    printf("\n%s - ", NAME);
-    printf("\nUsage: %s <iface> --<flood|release|starvation>\n", NAME);
+    printf("\n%s - v%d.%d.%d (%s)"
+                   "\nUsage: %s <iface> --<flood|release|starvation>\n"
+                   "\t-h, --help   \tPrint this help and exit.\n"
+                   "\t-v, --version\tPrint version and exit.\n"
+                   "\t-s, --server \tEnable dhcp rogue server.\n"
+                   "\t-l, --lease  \tSet lease time.\n"
+                   "\t-d, --dns    \tSet primary DNS address.\n"
+                   "\t-g, --gateway\tSet gateway address.\n"
+                   "\t--no-release \tDo not release stolen addresses on exit.\n",
+           NAME,
+           VERSION_MAJOR,
+           VERSION_MINOR,
+           VERSION_PATCH,
+           VERSION_TYPE,
+           NAME);
 }
 
 void sigHandler(int signum) {
