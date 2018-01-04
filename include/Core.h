@@ -30,16 +30,16 @@
 
 class Core {
 private:
-    std::list<DhcpAction *> actions;
+    DhcpAction *action;
     std::thread thActions;
+
+    void addDhcpDefaultOpt(DhcpPacket *message, DhcpSlot *slot, unsigned char type);
+
+    void dhcpServer(DhcpPacket *message);
 
     void executeActions();
 
     void recvDhcp();
-
-    void dhcpServer(DhcpPacket *message);
-
-    void addDhcpDefaultOpt(DhcpPacket *message, DhcpSlot *slot, unsigned char type);
 
 public:
     DhcpSocket socket;

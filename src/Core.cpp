@@ -20,58 +20,6 @@
 #include <DhcpSocket.h>
 #include <Core.h>
 
-void Core::executeActions() {
-    while (!this->stop)
-        for (auto action:this->actions)
-            action->action(&this->socket);
-}
-
-void Core::recvDhcp() {
-    DhcpPacket packet{};
-    PacketInfo pktInfo{};
-
-    while (!this->stop) {
-        if (this->socket.recvDhcp((unsigned char *) &packet, &pktInfo) == 0)
-            continue;
-
-        for (auto action:this->actions)
-            action->recvDhcpMsg(&this->socket, &this->pool, &pktInfo, &packet);
-
-        if (this->enableServer)
-            this->dhcpServer(&packet);
-    }
-}
-
-void Core::openSocket(const std::string &interface) {
-    this->socket.openSocket(interface);
-
-    this->thActions = std::thread(&Core::executeActions, this);
-
-    this->recvDhcp();
-
-    this->thActions.join();
-
-    if (this->releaseOnExit) {
-        std::cout << "Releasing addresses...\n";
-        this->releasePool();
-        std::cout << "All done!\n";
-    }
-}
-
-void Core::registerAction(DhcpAction *action) {
-    this->actions.push_front(action);
-}
-
-void Core::releasePool() {
-    DhcpSlot *slot;
-    while (!this->pool.empty()) {
-        slot = this->pool.popAndErase();
-        this->socket.sendDhcpRelease(slot);
-        delete slot;
-        usleep(5000);
-    }
-}
-
 void Core::addDhcpDefaultOpt(DhcpPacket *message, DhcpSlot *slot, unsigned char type) {
     int op = 0;
 
@@ -168,5 +116,56 @@ void Core::dhcpServer(DhcpPacket *message) {
     } else if (dhcp_type_equals(message, DHCP_RELEASE)) {
         clientIp.ip = message->ciaddr;
         this->pool.releaseSlot(&clientIp);
+    }
+}
+
+void Core::executeActions() {
+    while (!this->stop)
+        this->action->action(&this->socket);
+}
+
+void Core::recvDhcp() {
+    DhcpPacket packet{};
+    PacketInfo pktInfo{};
+
+    while (!this->stop) {
+        if (this->socket.recvDhcp((unsigned char *) &packet, &pktInfo) == 0)
+            continue;
+
+        this->action->recvDhcpMsg(&this->socket, &this->pool, &pktInfo, &packet);
+
+        if (this->enableServer)
+            this->dhcpServer(&packet);
+    }
+}
+
+void Core::openSocket(const std::string &interface) {
+    this->socket.openSocket(interface);
+
+    this->thActions = std::thread(&Core::executeActions, this);
+
+    this->recvDhcp();
+
+    pthread_cancel(this->thActions.native_handle()); // is safe (?.?)
+    this->thActions.join();
+
+    if (this->releaseOnExit) {
+        std::cout << "Releasing addresses...\n";
+        this->releasePool();
+        std::cout << "All done!\n";
+    }
+}
+
+void Core::registerAction(DhcpAction *action) {
+    this->action = action;
+}
+
+void Core::releasePool() {
+    DhcpSlot *slot;
+    while (!this->pool.empty()) {
+        slot = this->pool.popAndErase();
+        this->socket.sendDhcpRelease(slot);
+        delete slot;
+        usleep(5000);
     }
 }
