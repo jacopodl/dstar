@@ -120,8 +120,13 @@ void Core::dhcpServer(DhcpPacket *message) {
 }
 
 void Core::executeActions() {
-    while (!this->stop)
+    unsigned short wtime;
+
+    while (!this->stop) {
         this->action->action(&this->socket);
+        if ((wtime = this->action->getWaitingTime()) != 0)
+            usleep(wtime);
+    }
 }
 
 void Core::recvDhcp() {

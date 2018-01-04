@@ -23,8 +23,14 @@
 #include <DhcpPool.h>
 
 class DhcpAction {
+protected:
+    unsigned short waiting;
 public:
     virtual ~DhcpAction() = default;
+
+    unsigned short getWaitingTime() {
+        return this->waiting;
+    }
 
     virtual void action(DhcpSocket *socket) = 0;
 

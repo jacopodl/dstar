@@ -17,6 +17,10 @@
 #include <actions/Flood.h>
 #include <iostream>
 
+Flood::Flood() {
+    this->waiting = 15000; // us
+}
+
 void Flood::action(DhcpSocket *socket) {
     DhcpPacket dhcpPacket{};
     PacketInfo pktInfo{};

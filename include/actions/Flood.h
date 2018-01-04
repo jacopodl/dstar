@@ -21,6 +21,8 @@
 
 class Flood : public virtual DhcpAction {
 public:
+    Flood();
+
     void action(DhcpSocket *socket) override;
 };
 
