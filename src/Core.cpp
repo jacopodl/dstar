@@ -32,21 +32,21 @@ void Core::addDhcpDefaultOpt(DhcpPacket *message, DhcpSlot *slot, unsigned char 
     dhcp_append_option(message, DHCP_REQ_SUBMASK, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.netMask.ip);
 
     // ROUTER
-    if (ip_isempty(&this->serverOptions.gateway))
+    if (ip_isempty(&this->options.gateway))
         dhcp_append_option(message, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
     else
-        dhcp_append_option(message, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->serverOptions.gateway);
+        dhcp_append_option(message, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->options.gateway);
 
     // PRIMARY DNS
-    if (ip_isempty(&this->serverOptions.primaryDns))
+    if (ip_isempty(&this->options.primaryDns))
         dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
     else
-        dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->serverOptions.primaryDns);
+        dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->options.primaryDns);
 
     // LEASE TIME
     op = htonl(slot->lease);
-    if (this->serverOptions.lease != 0)
-        op = htonl(this->serverOptions.lease);
+    if (this->options.lease != 0)
+        op = htonl(this->options.lease);
     dhcp_append_option(message, DHCP_ADDR_LEASE_TIME, 4, (unsigned char *) &op);
 }
 
@@ -122,7 +122,7 @@ void Core::dhcpServer(DhcpPacket *message) {
 void Core::executeActions() {
     unsigned short wtime;
 
-    while (!this->stop) {
+    while (!this->options.stop) {
         this->action->action(&this->socket);
         if ((wtime = this->action->getWaitingTime()) != 0)
             usleep(wtime);
@@ -133,19 +133,19 @@ void Core::recvDhcp() {
     DhcpPacket packet{};
     PacketInfo pktInfo{};
 
-    while (!this->stop) {
+    while (!this->options.stop) {
         if (this->socket.recvDhcp((unsigned char *) &packet, &pktInfo) == 0)
             continue;
 
         this->action->recvDhcpMsg(&this->socket, &this->pool, &pktInfo, &packet);
 
-        if (this->enableServer)
+        if (this->options.enableServer)
             this->dhcpServer(&packet);
     }
 }
 
-void Core::openSocket(const std::string &interface) {
-    this->socket.openSocket(interface);
+void Core::openSocket() {
+    this->socket.openSocket(this->options.iface);
 
     this->thActions = std::thread(&Core::executeActions, this);
 
@@ -154,7 +154,7 @@ void Core::openSocket(const std::string &interface) {
     pthread_cancel(this->thActions.native_handle()); // is safe (?.?)
     this->thActions.join();
 
-    if (this->releaseOnExit) {
+    if (this->options.releaseOnExit) {
         std::cout << "Releasing addresses...\n";
         this->releasePool();
         std::cout << "All done!\n";

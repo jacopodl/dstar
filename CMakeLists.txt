@@ -27,7 +27,7 @@ link_directories("${source_dir}/bin/")
 include_directories(include)
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
 
-add_executable(dstar src/main.cpp src/Core.cpp src/actions/Flood.cpp src/actions/Starvation.cpp src/DhcpPool.cpp include/DhcpPool.h src/DhcpSocket.cpp include/DhcpSocket.h)
+add_executable(dstar src/main.cpp src/Core.cpp src/actions/Flood.cpp src/actions/Starvation.cpp src/DhcpPool.cpp include/DhcpPool.h src/DhcpSocket.cpp include/DhcpSocket.h include/Options.h)
 add_dependencies(dstar ${DEP_ARGSX})
 add_dependencies(dstar ${DEP_SPARK})
 target_link_libraries(dstar pthread)

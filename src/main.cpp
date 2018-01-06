@@ -29,7 +29,6 @@ using namespace std;
 Core core{};
 
 int main(int argc, char **argv) {
-    Options options{};
     ax_lopt lopt[] = {{(char *) "flood",      ARGSX_NOARG,   1},
                       {(char *) "release",    ARGSX_REQ_ARG, 2},
                       {(char *) "starvation", ARGSX_NOARG,   3},
@@ -50,16 +49,16 @@ int main(int argc, char **argv) {
     while ((opt = argsx(argc, argv, (char *) "hvsg!ld!", lopt, sizeof(lopt), '-')) != -1) {
         switch (opt) {
             case 1:
-                options.mode |= ATKMODE_FLOOD;
+                core.options.mode |= ATKMODE_FLOOD;
                 break;
             case 2:
-                options.mode |= ATKMODE_RELEASE;
+                core.options.mode |= ATKMODE_RELEASE;
                 break;
             case 3:
-                options.mode |= ATKMODE_STARVATION;
+                core.options.mode |= ATKMODE_STARVATION;
                 break;
             case 4:
-                core.releaseOnExit = false;
+                core.options.releaseOnExit = false;
                 break;
             case 'h':
                 usage();
@@ -72,19 +71,19 @@ int main(int argc, char **argv) {
 #endif
                 return 0;
             case 's':
-                core.enableServer = true;
+                core.options.enableServer = true;
                 break;
             case 'g':
-                if (!ip_parse_addr(ax_arg, &core.serverOptions.gateway)) {
+                if (!ip_parse_addr(ax_arg, &core.options.gateway)) {
                     cerr << "Invalid gateway address!\n";
                     return -1;
                 }
                 break;
             case 'l':
-                core.serverOptions.lease = (unsigned short) std::strtoul(ax_arg, nullptr, 10);
+                core.options.lease = (unsigned short) strtoul(ax_arg, nullptr, 10);
                 break;
             case 'd':
-                if (!ip_parse_addr(ax_arg, &core.serverOptions.primaryDns)) {
+                if (!ip_parse_addr(ax_arg, &core.options.primaryDns)) {
                     cerr << "Invalid DNS address!\n";
                     return -1;
                 }
@@ -94,22 +93,22 @@ int main(int argc, char **argv) {
             case ARGSX_FEW_ARGS:
                 return -1;
             default:
-                options.iface = std::string(ax_arg);
+                core.options.iface = string(ax_arg);
                 break;
         }
     }
 
-    if (options.mode != 0) {
+    if (core.options.mode != 0) {
         printWelcome();
-        if (options.mode & ATKMODE_FLOOD) {
-            core.registerAction(new Flood());
-        } else if (options.mode & ATKMODE_RELEASE) {
+        if (core.options.mode & ATKMODE_FLOOD) {
+            core.registerAction(new Flood(&core.options));
+        } else if (core.options.mode & ATKMODE_RELEASE) {
 
-        } else if (options.mode & ATKMODE_STARVATION) {
-            core.registerAction(new Starvation());
+        } else if (core.options.mode & ATKMODE_STARVATION) {
+            core.registerAction(new Starvation(&core.options));
         }
         signal(SIGINT, sigHandler);
-        core.openSocket(options.iface);
+        core.openSocket();
     } else
         printf("Nothing to do here! Zzzz\n"
                        "Psss, you can try with %s --help ;)\n", NAME);
@@ -118,7 +117,7 @@ int main(int argc, char **argv) {
 }
 
 void printWelcome() {
-    static const std::string welcome(R"(
+    static const string welcome(R"(
 
 @@@@@@@    @@@@@@   @@@@@@@   @@@@@@   @@@@@@@
 @@@@@@@@  @@@@@@@   @@@@@@@  @@@@@@@@  @@@@@@@@
@@ -155,5 +154,5 @@ void usage() {
 
 void sigHandler(int signum) {
     cout << "Stopping..." << endl;
-    core.stop = true;
+    core.options.stop = true;
 }

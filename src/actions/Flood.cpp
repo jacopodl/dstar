@@ -17,7 +17,7 @@
 #include <actions/Flood.h>
 #include <iostream>
 
-Flood::Flood() {
+Flood::Flood(Options *options) : DhcpAction(options) {
     this->waiting = 15000; // us
 }
 

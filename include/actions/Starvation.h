@@ -25,7 +25,7 @@ private:
     pthread_cond_t cond;
     unsigned int lastXid = 0;
 public:
-    Starvation();
+    Starvation(Options *options);
 
     ~Starvation();
 

@@ -20,7 +20,7 @@
 
 #include <actions/Starvation.h>
 
-Starvation::Starvation() {
+Starvation::Starvation(Options *options) : DhcpAction(options) {
     pthread_mutex_init(&this->mutex, nullptr);
     pthread_cond_init(&this->cond, nullptr);
 }

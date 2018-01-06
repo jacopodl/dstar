@@ -19,13 +19,19 @@
 
 #include <spark.h>
 
+#include <Options.h>
 #include <DhcpSocket.h>
 #include <DhcpPool.h>
 
 class DhcpAction {
 protected:
+    Options *options;
     unsigned short waiting;
 public:
+    DhcpAction(Options *options) {
+        this->options = options;
+    }
+
     virtual ~DhcpAction() = default;
 
     unsigned short getWaitingTime() {

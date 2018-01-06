@@ -22,6 +22,7 @@
 #include <string>
 #include <spark.h>
 
+#include <Options.h>
 #include <PacketInfo.h>
 #include <DhcpAction.h>
 #include <DhcpSocket.h>
@@ -44,18 +45,9 @@ private:
 public:
     DhcpSocket socket;
     DhcpPool pool;
+    Options options;
 
-    bool stop = false;
-    bool releaseOnExit = true;
-    bool enableServer = false;
-
-    struct {
-        netaddr_ip gateway{};
-        netaddr_ip primaryDns{};
-        unsigned short lease = 0;
-    } serverOptions;
-
-    void openSocket(const std::string &interface);
+    void openSocket();
 
     void registerAction(DhcpAction *action);
 

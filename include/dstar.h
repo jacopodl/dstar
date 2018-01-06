@@ -29,11 +29,6 @@
 #define ATKMODE_STARVATION  (1<<2)
 #define ATKMODE_ROGUESERVER (1<<3)
 
-struct Options {
-    std::string iface;
-    int mode = 0;
-};
-
 void printWelcome();
 
 void usage();
