@@ -15,13 +15,13 @@
 */
 
 #include <iostream>
-#include <argsx.h>
+#include <unistd.h>
 
+#include <argsx.h>
 #include <dstar.h>
-#include <actions/Flood.h>
-#include <actions/Starvation.h>
 #include <csignal>
 
+#include <Options.h>
 #include <Core.h>
 
 using namespace std;
@@ -98,15 +98,15 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (core.options.mode != 0) {
-        printWelcome();
-        if (core.options.mode & ATKMODE_FLOOD) {
-            core.registerAction(new Flood(&core.options));
-        } else if (core.options.mode & ATKMODE_RELEASE) {
+    if (getuid()) {
+        cerr << "Required elevated privileges!\n";
+        return -1;
+    }
 
-        } else if (core.options.mode & ATKMODE_STARVATION) {
-            core.registerAction(new Starvation(&core.options));
-        }
+    if (core.registerAction() != 0) {
+        printWelcome();
+        if (core.options.enableServer)
+            cout << "With rogue DHCP server\n";
         signal(SIGINT, sigHandler);
         core.openSocket();
     } else

@@ -19,6 +19,8 @@
 #include <zconf.h>
 #include <DhcpSocket.h>
 #include <Core.h>
+#include <actions/Starvation.h>
+#include <actions/Flood.h>
 
 void Core::addDhcpDefaultOpt(DhcpPacket *message, DhcpSlot *slot, unsigned char type) {
     int op = 0;
@@ -144,6 +146,15 @@ void Core::recvDhcp() {
     }
 }
 
+int Core::registerAction() {
+    if (this->options.mode & ATKMODE_FLOOD) {
+        this->action = new Flood(&this->options);
+    } else if (this->options.mode & ATKMODE_STARVATION) {
+        this->action = new Starvation(&this->options);
+    }
+    return this->options.mode;
+}
+
 void Core::openSocket() {
     this->socket.openSocket(this->options.iface);
 
@@ -159,10 +170,6 @@ void Core::openSocket() {
         this->releasePool();
         std::cout << "All done!\n";
     }
-}
-
-void Core::registerAction(DhcpAction *action) {
-    this->action = action;
 }
 
 void Core::releasePool() {

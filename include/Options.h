@@ -4,6 +4,10 @@
 #include <string>
 #include <spark.h>
 
+#define ATKMODE_FLOOD       (1<<0)
+#define ATKMODE_RELEASE     (1<<1)
+#define ATKMODE_STARVATION  (1<<2)
+
 struct Options {
     std::string iface;
     int mode = 0;

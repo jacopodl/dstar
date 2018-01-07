@@ -47,9 +47,9 @@ public:
     DhcpPool pool;
     Options options;
 
-    void openSocket();
+    int registerAction();
 
-    void registerAction(DhcpAction *action);
+    void openSocket();
 
     void releasePool();
 };
