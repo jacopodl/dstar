@@ -70,8 +70,8 @@ void Core::dhcpServer(DhcpPacket *message) {
                         DHCP_OP_BOOT_REPLY,
                         0,
                         message->xid,
-                        DHCP_FLAGS_BROADCAST,
                         0,
+                        DHCP_FLAGS_BROADCAST,
                         nullptr,
                         &slot->clientIp,
                         &this->socket.netinfo.ipAddr,
@@ -91,6 +91,17 @@ void Core::dhcpServer(DhcpPacket *message) {
         if ((slot = this->pool.getSlotByXid(message->xid)) == nullptr)
             return;
 
+        if (dhcp_get_option_uint(message, 50) != slot->clientIp.ip) {
+            std::cerr << "The request id does not match the requested address, DHCP REQUEST ignored!\n";
+            slot->xid = 0;
+            return;
+        }
+
+        if (dhcp_get_option_uint(message, 54) != this->socket.netinfo.ipAddr.ip) {
+            slot->xid = 0;
+            return;
+        }
+
         slot->assigned = true;
 
         // ACK
@@ -98,8 +109,8 @@ void Core::dhcpServer(DhcpPacket *message) {
                         DHCP_OP_BOOT_REPLY,
                         0,
                         message->xid,
-                        DHCP_FLAGS_BROADCAST,
                         0,
+                        DHCP_FLAGS_BROADCAST,
                         nullptr,
                         &slot->clientIp,
                         &this->socket.netinfo.ipAddr,
