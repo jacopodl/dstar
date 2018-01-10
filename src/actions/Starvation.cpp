@@ -99,14 +99,14 @@ void Starvation::recvDhcpMsg(DhcpSocket *socket, DhcpPool *pool, PacketInfo *pkt
     } else if (dhcp_type_equals(dhcp, DHCP_ACK)) {
         slot = new DhcpSlot;
         slot->clientIp = pktInfo->ipSrc;
-        memcpy(slot->clientMac.mac, dhcp->chaddr, ETHHWASIZE);
+        memcpy(slot->fakeClientMac.mac, dhcp->chaddr, ETHHWASIZE);
         slot->serverIp = pktInfo->ipDst;
         slot->serverMac = pktInfo->phisAddr;
         gettimeofday(&slot->timeStamp, nullptr);
         slot->lease = ntohl(dhcp_get_option_uint(dhcp, DHCP_ADDR_LEASE_TIME));
 
         std::cout << "[--->V] DHCP ACK\n\tIp:" << ip_getstr_r(&slot->clientIp, cIp)
-                  << " - MAC:" << eth_getstr_r(&slot->clientMac, cMac)
+                  << " - MAC:" << eth_getstr_r(&slot->fakeClientMac, cMac)
                   << " lease(s):" << slot->lease << std::endl;
 
         pool->addSlot(slot);

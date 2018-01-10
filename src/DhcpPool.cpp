@@ -14,7 +14,9 @@
 	* along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstring>
 #include <sys/time.h>
+
 #include <DhcpPool.h>
 
 bool DhcpPool::empty() {
@@ -30,7 +32,7 @@ DhcpSlot *DhcpPool::popAndErase() {
     return slot;
 }
 
-DhcpSlot *DhcpPool::getFreeSlot() {
+DhcpSlot *DhcpPool::getFreeSlot(netaddr_mac *clientMac, unsigned int newXid) {
     DhcpSlot *slot = nullptr;
     timeval now{};
 
@@ -44,23 +46,25 @@ DhcpSlot *DhcpPool::getFreeSlot() {
         }
         if (!cursor->assigned) {
             if ((now.tv_sec - cursor->timeStamp.tv_sec) >= 30) {
-                cursor->xid = 0;
                 slot = cursor;
                 break;
             }
         }
         // if ((now.tv_sec - (cursor->timeStamp.tv_sec + cursor->lease)))
     }
-    this->mutex.unlock();
-    if (slot != nullptr)
+    if (slot != nullptr) {
+        memcpy(slot->clientMac.mac, clientMac->mac, ETHHWASIZE);
+        slot->xid = newXid;
         gettimeofday(&slot->timeStamp, nullptr);
+    }
+    this->mutex.unlock();
     return slot;
 }
 
-DhcpSlot *DhcpPool::getSlotByXid(unsigned int xid) {
+DhcpSlot *DhcpPool::getSlot(netaddr_mac *clientMac, unsigned int xid) {
     this->mutex.lock();
     for (auto cursor:this->slots) {
-        if (cursor->xid == xid) {
+        if (cursor->xid == xid && eth_equals(&cursor->clientMac, clientMac)) {
             this->mutex.unlock();
             return cursor;
         }

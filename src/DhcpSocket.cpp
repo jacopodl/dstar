@@ -121,7 +121,7 @@ void DhcpSocket::sendDhcpRelease(DhcpSlot *slot) {
     pktInfo.ipDst = slot->serverIp;
     pktInfo.toServer = true;
 
-    dhcp_inject_release((unsigned char *) &packet, &slot->clientMac, &slot->clientIp, &slot->serverIp, 0);
+    dhcp_inject_release((unsigned char *) &packet, &slot->fakeClientMac, &slot->clientIp, &slot->serverIp, 0);
 
     if ((err = this->sendDhcpMsg(&packet, DHCPPKTSIZE, &pktInfo)) < 0)
         std::cerr << "DhcpSocket (sendDhcpRelease): " << spark_strerror(err) << std::endl;

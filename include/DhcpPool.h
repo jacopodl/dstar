@@ -32,9 +32,9 @@ public:
 
     DhcpSlot *popAndErase();
 
-    DhcpSlot *getFreeSlot();
+    DhcpSlot *getFreeSlot(netaddr_mac *clientMac, unsigned int newXid);
 
-    DhcpSlot *getSlotByXid(unsigned int xid);
+    DhcpSlot *getSlot(netaddr_mac *clientMac, unsigned int xid);
 
     void addSlot(DhcpSlot *slot);
 

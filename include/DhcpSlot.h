@@ -20,6 +20,7 @@
 struct DhcpSlot {
     netaddr_ip clientIp;
     netaddr_mac clientMac;
+    netaddr_mac fakeClientMac;
     netaddr_ip serverIp;
     netaddr_mac serverMac;
     timeval timeStamp;

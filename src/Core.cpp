@@ -57,13 +57,15 @@ void Core::dhcpServer(DhcpPacket *message) {
     PacketInfo pktInfo{};
     DhcpSlot *slot = nullptr;
     netaddr_ip(clientIp);
+    netaddr_mac(clientMac);
     int tmp = 0;
 
-    if (dhcp_type_equals(message, DHCP_DISCOVER)) {
-        if ((slot = this->pool.getFreeSlot()) == nullptr)
-            return;
+    clientIp.ip = message->ciaddr;
+    memcpy(clientMac.mac, message->chaddr, ETHHWASIZE);
 
-        slot->xid = message->xid;
+    if (dhcp_type_equals(message, DHCP_DISCOVER)) {
+        if ((slot = this->pool.getFreeSlot(&clientMac, message->xid)) == nullptr)
+            return;
 
         // OFFER
         dhcp_inject_raw((unsigned char *) &response,
@@ -88,11 +90,11 @@ void Core::dhcpServer(DhcpPacket *message) {
         if ((tmp = this->socket.sendDhcpMsg(&response, DHCPPKTSIZE, &pktInfo)) < 0)
             std::cerr << "DHCP server err: " << spark_strerror(tmp) << std::endl;
     } else if (dhcp_type_equals(message, DHCP_REQUEST)) {
-        if ((slot = this->pool.getSlotByXid(message->xid)) == nullptr)
+        if ((slot = this->pool.getSlot(&clientMac, message->xid)) == nullptr)
             return;
 
         if (dhcp_get_option_uint(message, 50) != slot->clientIp.ip) {
-            std::cerr << "The request id does not match the requested address, DHCP REQUEST ignored!\n";
+            std::cerr << "The request ID does not match the requested address, DHCP REQUEST ignored!\n";
             slot->xid = 0;
             return;
         }
@@ -126,10 +128,8 @@ void Core::dhcpServer(DhcpPacket *message) {
         pktInfo.toServer = false;
         if ((tmp = this->socket.sendDhcpMsg(&response, DHCPPKTSIZE, &pktInfo)) < 0)
             std::cerr << "DHCP server err: " << spark_strerror(tmp) << std::endl;
-    } else if (dhcp_type_equals(message, DHCP_RELEASE)) {
-        clientIp.ip = message->ciaddr;
+    } else if (dhcp_type_equals(message, DHCP_RELEASE))
         this->pool.releaseSlot(&clientIp);
-    }
 }
 
 void Core::executeActions() {
