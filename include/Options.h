@@ -17,6 +17,7 @@ struct Options {
     bool enableServer = false;
 
     // DhcpServerOptions
+    unsigned short serverFlags = 0;
     unsigned short lease = 0;
     netaddr_ip gateway{};
     netaddr_ip primaryDns{};

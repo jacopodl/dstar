@@ -73,7 +73,7 @@ void Core::dhcpServer(DhcpPacket *message) {
                         0,
                         message->xid,
                         0,
-                        DHCP_FLAGS_BROADCAST,
+                        this->options.serverFlags,
                         nullptr,
                         &slot->clientIp,
                         &this->socket.netinfo.ipAddr,
@@ -82,11 +82,19 @@ void Core::dhcpServer(DhcpPacket *message) {
                         nullptr);
         memcpy(response.chaddr, message->chaddr, ETHHWASIZE);
         this->addDhcpDefaultOpt(&response, slot, DHCP_OFFER);
+
         // INFO
         pktInfo.ipSrc = this->socket.netinfo.ipAddr;
-        pktInfo.ipDst.ip = 0xFFFFFFFF;
-        eth_bcast(&pktInfo.phisAddr);
         pktInfo.toServer = false;
+
+        if (this->options.serverFlags & DHCP_FLAGS_BROADCAST) {
+            pktInfo.ipDst.ip = 0xFFFFFFFF;
+            eth_bcast(&pktInfo.phisAddr);
+        } else {
+            pktInfo.ipDst.ip = slot->clientIp.ip;
+            memcpy(pktInfo.phisAddr.mac, message->chaddr, ETHHWASIZE);
+        }
+
         if ((tmp = this->socket.sendDhcpMsg(&response, DHCPPKTSIZE, &pktInfo)) < 0)
             std::cerr << "DHCP server err: " << spark_strerror(tmp) << std::endl;
     } else if (dhcp_type_equals(message, DHCP_REQUEST)) {
@@ -112,7 +120,7 @@ void Core::dhcpServer(DhcpPacket *message) {
                         0,
                         message->xid,
                         0,
-                        DHCP_FLAGS_BROADCAST,
+                        this->options.serverFlags,
                         nullptr,
                         &slot->clientIp,
                         &this->socket.netinfo.ipAddr,
@@ -121,11 +129,17 @@ void Core::dhcpServer(DhcpPacket *message) {
                         nullptr);
         memcpy(response.chaddr, message->chaddr, ETHHWASIZE);
         this->addDhcpDefaultOpt(&response, slot, DHCP_ACK);
+
         // INFO
         pktInfo.ipSrc = this->socket.netinfo.ipAddr;
-        pktInfo.ipDst.ip = 0xFFFFFFFF;
-        eth_bcast(&pktInfo.phisAddr);
         pktInfo.toServer = false;
+        if (this->options.serverFlags & DHCP_FLAGS_BROADCAST) {
+            pktInfo.ipDst.ip = 0xFFFFFFFF;
+            eth_bcast(&pktInfo.phisAddr);
+        } else {
+            pktInfo.ipDst.ip = slot->clientIp.ip;
+            memcpy(pktInfo.phisAddr.mac, message->chaddr, ETHHWASIZE);
+        }
         if ((tmp = this->socket.sendDhcpMsg(&response, DHCPPKTSIZE, &pktInfo)) < 0)
             std::cerr << "DHCP server err: " << spark_strerror(tmp) << std::endl;
     } else if (dhcp_type_equals(message, DHCP_RELEASE))

@@ -35,6 +35,7 @@ int main(int argc, char **argv) {
                       {(char *) "no-release", ARGSX_NOARG,   4},
                       {(char *) "help",       ARGSX_NOARG,   'h'},
                       {(char *) "version",    ARGSX_NOARG,   'v'},
+                      {(char *) "bcast",      ARGSX_NOARG,   'b'},
                       {(char *) "server",     ARGSX_NOARG,   's'},
                       {(char *) "gateway",    ARGSX_REQ_ARG, 'g'},
                       {(char *) "lease",      ARGSX_NOARG,   'l'},
@@ -46,7 +47,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    while ((opt = argsx(argc, argv, (char *) "hvsg!ld!", lopt, sizeof(lopt), '-')) != -1) {
+    while ((opt = argsx(argc, argv, (char *) "hvbsg!ld!", lopt, sizeof(lopt), '-')) != -1) {
         switch (opt) {
             case 1:
                 core.options.mode |= ATKMODE_FLOOD;
@@ -70,6 +71,9 @@ int main(int argc, char **argv) {
                        __DATE__, __TIME__);
 #endif
                 return 0;
+            case 'b':
+                core.options.serverFlags |= DHCP_FLAGS_BROADCAST;
+                break;
             case 's':
                 core.options.enableServer = true;
                 break;
@@ -139,6 +143,7 @@ void usage() {
                    "\nUsage: %s <iface> --<flood|release|starvation>\n"
                    "\t-h, --help   \tPrint this help and exit.\n"
                    "\t-v, --version\tPrint version and exit.\n"
+                   "\t-b, --bcast  \tUse broadcast reply.\n"
                    "\t-s, --server \tEnable dhcp rogue server.\n"
                    "\t-l, --lease  \tSet lease time.\n"
                    "\t-d, --dns    \tSet primary DNS address.\n"
