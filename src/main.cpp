@@ -110,7 +110,9 @@ int main(int argc, char **argv) {
     if (core.registerAction() != 0) {
         printWelcome();
         if (core.options.enableServer)
-            cout << "With rogue DHCP server\n";
+            cout << "[+] DHCP server\n";
+        else
+            cout << "[-] DHCP server\n";
         signal(SIGINT, sigHandler);
         core.openSocket();
     } else

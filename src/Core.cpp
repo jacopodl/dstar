@@ -56,6 +56,8 @@ void Core::dhcpServer(DhcpPacket *message) {
     DhcpPacket response{};
     PacketInfo pktInfo{};
     DhcpSlot *slot = nullptr;
+    char ip[IPSTRLEN];
+    char mac[ETHSTRLEN];
     netaddr_ip(clientIp);
     netaddr_mac(clientMac);
     int tmp = 0;
@@ -97,6 +99,10 @@ void Core::dhcpServer(DhcpPacket *message) {
 
         if ((tmp = this->socket.sendDhcpMsg(&response, DHCPPKTSIZE, &pktInfo)) < 0)
             std::cerr << "DHCP server err: " << spark_strerror(tmp) << std::endl;
+        else {
+            printf("[ROGUE SERVER]: Reply with offer(%s) to client: %s\n", ip_getstr_r(&slot->clientIp, ip),
+                   eth_getstr_r(&slot->clientMac, mac));
+        }
     } else if (dhcp_type_equals(message, DHCP_REQUEST)) {
         if ((slot = this->pool.getSlot(&clientMac, message->xid)) == nullptr)
             return;
@@ -142,6 +148,10 @@ void Core::dhcpServer(DhcpPacket *message) {
         }
         if ((tmp = this->socket.sendDhcpMsg(&response, DHCPPKTSIZE, &pktInfo)) < 0)
             std::cerr << "DHCP server err: " << spark_strerror(tmp) << std::endl;
+        else {
+            printf("[ROGUE SERVER]: Offer accepted, now %s is %s!\n", ip_getstr_r(&slot->clientIp, ip),
+                   eth_getstr_r(&slot->clientMac, mac));
+        }
     } else if (dhcp_type_equals(message, DHCP_RELEASE))
         this->pool.releaseSlot(&clientIp);
 }

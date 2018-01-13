@@ -105,9 +105,9 @@ void Starvation::recvDhcpMsg(DhcpSocket *socket, DhcpPool *pool, PacketInfo *pkt
         gettimeofday(&slot->timeStamp, nullptr);
         slot->lease = ntohl(dhcp_get_option_uint(dhcp, DHCP_ADDR_LEASE_TIME));
 
-        std::cout << "[--->V] DHCP ACK\n\tIp:" << ip_getstr_r(&slot->clientIp, cIp)
-                  << " - MAC:" << eth_getstr_r(&slot->fakeClientMac, cMac)
-                  << " lease(s):" << slot->lease << std::endl;
+        std::cout << "[--->V] DHCP ACK\n\tIp: " << ip_getstr_r(&slot->clientIp, cIp)
+                  << " - MAC: " << eth_getstr_r(&slot->fakeClientMac, cMac)
+                  << " lease(s): " << slot->lease << std::endl;
 
         pool->addSlot(slot);
         this->lastXid = 0;
