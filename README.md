@@ -2,12 +2,12 @@
 ![](https://img.shields.io/badge/version-1.0.0-green.svg)
 [![GPLv3 License](https://img.shields.io/badge/License-GPLv3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0.html)
 
-# Dstar #
+# Dstar :hammer:
 This tool implement various DHCP attacks and can be used to make experiments and test on __your network__!
 
 Supported features:
-- Flood -> Flood DHCP server with large amount of DHCP discover message (this attack not acquire addresses!)
-- Starvation -> Try to acquire all addresses in DHCP pool, you can use this option with a rogue DHCP server... MITM? ;)
+- Flood -> Flood DHCP server with large amount of DHCP discover messages (this attack not acquire addresses!)
+- Starvation -> Try to acquire all addresses in DHCP pool, you can use this option with a rogue DHCP server... MITM? :smirk:
 - Built-in rogue DHCP server
 
 # Setting up dstar #
@@ -48,7 +48,7 @@ Getting help with:
 
     $ ./dstar --help
     
-# Action snapshot #
+# Action snapshot :camera:
 
     $ sudo ./dstar %interface% --starvation
 
@@ -81,3 +81,7 @@ Getting help with:
     ^CStopping...
     Releasing addresses...
     All done!
+
+# Possible improvements: #
+- Multithread capability
+- DHCPv6
