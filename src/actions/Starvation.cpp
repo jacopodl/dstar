@@ -16,7 +16,6 @@
 
 #include <iostream>
 #include <cstring>
-#include <sys/time.h>
 
 #include <actions/Starvation.h>
 
@@ -64,10 +63,12 @@ void Starvation::action(DhcpSocket *socket) {
 void Starvation::recvDhcpMsg(DhcpSocket *socket, DhcpPool *pool, PacketInfo *pktInfo, DhcpPacket *dhcp) {
     DhcpPacket packet{};
     DhcpSlot *slot;
-    netaddr_mac(chaddr);
     char cIp[IPSTRLEN];
     char cMac[ETHSTRLEN];
+    unsigned char *optPtr;
+    netaddr_mac(chaddr);
     int err;
+    unsigned int len;
 
     pthread_mutex_lock(&this->mutex);
 
@@ -102,7 +103,13 @@ void Starvation::recvDhcpMsg(DhcpSocket *socket, DhcpPool *pool, PacketInfo *pkt
         memcpy(slot->fakeClientMac.mac, dhcp->chaddr, ETHHWASIZE);
         slot->serverIp = pktInfo->ipDst;
         slot->serverMac = pktInfo->phisAddr;
-        gettimeofday(&slot->timeStamp, nullptr);
+
+        // Get first DNS address
+        if ((optPtr = dhcp_get_option_value(dhcp, DHCP_REQ_DNS, &len)) != nullptr) {
+            slot->primaryDns.ip = *((unsigned int *) optPtr);
+            free(optPtr);
+        }
+
         slot->lease = ntohl(dhcp_get_option_uint(dhcp, DHCP_ADDR_LEASE_TIME));
 
         std::cout << "[--->V] DHCP ACK\n\tIp: " << ip_getstr_r(&slot->clientIp, cIp)

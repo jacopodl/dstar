@@ -40,9 +40,12 @@ void Core::addDhcpDefaultOpt(DhcpPacket *message, DhcpSlot *slot, unsigned char 
         dhcp_append_option(message, DHCP_REQ_ROUTERS, IPADDRSIZE, (unsigned char *) &this->options.gateway);
 
     // PRIMARY DNS
-    if (ip_isempty(&this->options.primaryDns))
-        dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
-    else
+    if (ip_isempty(&this->options.primaryDns)) {
+        if (ip_isempty(&slot->primaryDns))
+            dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->socket.netinfo.ipAddr.ip);
+        else
+            dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &slot->primaryDns.ip);
+    } else
         dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->options.primaryDns);
 
     // LEASE TIME

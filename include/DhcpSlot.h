@@ -23,6 +23,7 @@ struct DhcpSlot {
     netaddr_mac fakeClientMac;
     netaddr_ip serverIp;
     netaddr_mac serverMac;
+    netaddr_ip primaryDns;
     timeval timeStamp;
     unsigned int lease;
     unsigned int xid = 0;
