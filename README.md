@@ -1,9 +1,9 @@
 ![](https://img.shields.io/badge/Language-C++-orange.svg)
-![](https://img.shields.io/badge/version-0.1.0-green.svg)
+![](https://img.shields.io/badge/version-1.0.0-green.svg)
 [![GPLv3 License](https://img.shields.io/badge/License-GPLv3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0.html)
 
 # Dstar #
-This tool implement various DHCP attacks and can be used for test DHCP server in __your network__!
+This tool implement various DHCP attacks and can be used to make experiments and test on __your network__!
 
 Supported features:
 - Flood -> Flood DHCP server with large amount of DHCP discover message (this attack not acquire addresses!)
@@ -16,12 +16,16 @@ First of all getting the code from repository:
 
     $ git clone https://github.com/jacopodl/dstar
 
-Now you can compile it with followings command:
+Compile it with followings command:
 
     $ cd dstar
     $ git submodule init && git submodule update
     $ cmake .
     $ make
+
+Or if you are very busy:
+
+    $ ./build.sh
 
 # Usage example #
 Flood DHCP server with discover messages:
