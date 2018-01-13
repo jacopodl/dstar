@@ -30,9 +30,8 @@ Core core{};
 
 int main(int argc, char **argv) {
     ax_lopt lopt[] = {{(char *) "flood",      ARGSX_NOARG,   1},
-                      {(char *) "release",    ARGSX_REQ_ARG, 2},
-                      {(char *) "starvation", ARGSX_NOARG,   3},
-                      {(char *) "no-release", ARGSX_NOARG,   4},
+                      {(char *) "starvation", ARGSX_NOARG,   2},
+                      {(char *) "no-release", ARGSX_NOARG,   3},
                       {(char *) "help",       ARGSX_NOARG,   'h'},
                       {(char *) "version",    ARGSX_NOARG,   'v'},
                       {(char *) "bcast",      ARGSX_NOARG,   'b'},
@@ -53,12 +52,9 @@ int main(int argc, char **argv) {
                 core.options.mode |= ATKMODE_FLOOD;
                 break;
             case 2:
-                core.options.mode |= ATKMODE_RELEASE;
-                break;
-            case 3:
                 core.options.mode |= ATKMODE_STARVATION;
                 break;
-            case 4:
+            case 3:
                 core.options.releaseOnExit = false;
                 break;
             case 'h':
@@ -142,7 +138,7 @@ void printWelcome() {
 
 void usage() {
     printf("\n%s - v%d.%d.%d (%s)"
-                   "\nUsage: %s <iface> --<flood|release|starvation>\n"
+                   "\nUsage: %s <iface> --<flood|starvation>\n"
                    "\t-h, --help   \tPrint this help and exit.\n"
                    "\t-v, --version\tPrint version and exit.\n"
                    "\t-b, --bcast  \tUse broadcast reply.\n"

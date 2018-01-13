@@ -19,9 +19,9 @@
 
 #define NAME "dstar"
 
-#define VERSION_TYPE "alpha"
-#define VERSION_MAJOR 0
-#define VERSION_MINOR 1
+#define VERSION_TYPE "stable"
+#define VERSION_MAJOR 1
+#define VERSION_MINOR 0
 #define VERSION_PATCH 0
 
 void printWelcome();

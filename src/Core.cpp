@@ -46,7 +46,7 @@ void Core::addDhcpDefaultOpt(DhcpPacket *message, DhcpSlot *slot, unsigned char 
         else
             dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &slot->primaryDns.ip);
     } else
-        dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->options.primaryDns);
+        dhcp_append_option(message, DHCP_REQ_DNS, IPADDRSIZE, (unsigned char *) &this->options.primaryDns.ip);
 
     // LEASE TIME
     op = htonl(slot->lease);
@@ -203,7 +203,7 @@ void Core::openSocket() {
     pthread_cancel(this->thActions.native_handle()); // is safe (?.?)
     this->thActions.join();
 
-    if (this->options.releaseOnExit) {
+    if (this->options.releaseOnExit && !this->pool.empty()) {
         std::cout << "Releasing addresses...\n";
         this->releasePool();
         std::cout << "All done!\n";
