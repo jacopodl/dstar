@@ -68,7 +68,7 @@ void Starvation::recvDhcpMsg(DhcpSocket *socket, DhcpPool *pool, PacketInfo *pkt
     unsigned char *optPtr;
     netaddr_mac(chaddr);
     int err;
-    unsigned int len;
+    unsigned char opLen;
 
     pthread_mutex_lock(&this->mutex);
 
@@ -105,7 +105,7 @@ void Starvation::recvDhcpMsg(DhcpSocket *socket, DhcpPool *pool, PacketInfo *pkt
         slot->serverMac = pktInfo->phisAddr;
 
         // Get first DNS address
-        if ((optPtr = dhcp_get_option_value(dhcp, DHCP_REQ_DNS, &len)) != nullptr) {
+        if ((optPtr = dhcp_get_option_value(dhcp, DHCP_REQ_DNS, &opLen)) != nullptr) {
             slot->primaryDns.ip = *((unsigned int *) optPtr);
             free(optPtr);
         }
