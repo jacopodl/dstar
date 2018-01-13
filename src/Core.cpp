@@ -156,7 +156,7 @@ void Core::dhcpServer(DhcpPacket *message) {
                    eth_getstr_r(&slot->clientMac, mac));
         }
     } else if (dhcp_type_equals(message, DHCP_RELEASE))
-        this->pool.releaseSlot(&clientIp);
+        this->pool.releaseSlot(&clientMac, &clientIp);
 }
 
 void Core::executeActions() {

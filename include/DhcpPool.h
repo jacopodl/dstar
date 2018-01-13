@@ -38,7 +38,7 @@ public:
 
     void addSlot(DhcpSlot *slot);
 
-    void releaseSlot(netaddr_ip *ip);
+    void releaseSlot(netaddr_mac *mac, netaddr_ip *ip);
 };
 
 

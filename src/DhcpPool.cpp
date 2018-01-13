@@ -49,8 +49,12 @@ DhcpSlot *DhcpPool::getFreeSlot(netaddr_mac *clientMac, unsigned int newXid) {
                 slot = cursor;
                 break;
             }
+        } else {
+            if ((cursor->timeStamp.tv_sec + cursor->lease) < now.tv_sec) {
+                slot = cursor;
+                break;
+            }
         }
-        // if ((now.tv_sec - (cursor->timeStamp.tv_sec + cursor->lease)))
     }
     if (slot != nullptr) {
         memcpy(slot->clientMac.mac, clientMac->mac, ETHHWASIZE);
@@ -79,10 +83,10 @@ void DhcpPool::addSlot(DhcpSlot *slot) {
     this->mutex.unlock();
 }
 
-void DhcpPool::releaseSlot(netaddr_ip *ip) {
+void DhcpPool::releaseSlot(netaddr_mac *mac, netaddr_ip *ip) {
     this->mutex.lock();
     for (auto cursor:this->slots)
-        if (ip_equals(&cursor->clientIp, ip) && cursor->assigned) {
+        if (cursor->assigned && ip_equals(&cursor->clientIp, ip) && eth_equals(&cursor->clientMac, mac)) {
             cursor->xid = 0;
             cursor->assigned = false;
             break;
