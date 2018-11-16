@@ -14,6 +14,7 @@
 	* along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <unistd.h>
 #include <iostream>
 #include <cstring>
 #include <zconf.h>
