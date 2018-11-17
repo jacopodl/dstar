@@ -6,7 +6,7 @@
 This tool implement various DHCP attacks and can be used to make experiments and test on __your network__!
 
 Supported features:
-- Flood -> Flood DHCP server with large amount of DHCP discover messages (this attack not acquire addresses!)
+- Flood -> Flood DHCP server with large amount of DHCP discover messages (this attack does not acquire addresses!)
 - Starvation -> Try to acquire all addresses in DHCP pool, you can use this option with a rogue DHCP server... MITM? :smirk:
 - Built-in rogue DHCP server
 
