@@ -10,6 +10,10 @@ Supported features:
 - Starvation -> Try to acquire all addresses in DHCP pool, you can use this option with a rogue DHCP server... MITM? :smirk:
 - Built-in rogue DHCP server
 
+# Prerequisites #
+
+    $ sudo apt-get install -y build-essential cmake zlib1g-dev
+
 # Setting up dstar #
 
 First of all getting the code from repository:
