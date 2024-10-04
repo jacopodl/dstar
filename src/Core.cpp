@@ -17,7 +17,6 @@
 #include <unistd.h>
 #include <iostream>
 #include <cstring>
-#include <zconf.h>
 #include <DhcpSocket.h>
 #include <Core.h>
 #include <actions/Starvation.h>
